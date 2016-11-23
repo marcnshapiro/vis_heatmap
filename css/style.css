@@ -1,0 +1,22 @@
+
+body {
+  font: 10px sans-serif;
+  background-color: lightsteelblue;
+}
+
+.tile {
+  shape-rendering: crispEdges;
+}
+
+#tooltip {
+  position: absolute;
+  text-align: center;
+  width: 150px;
+  padding: 2px;
+  font: 12px sans-serif;
+  background: antiquewhite;
+  border: 1px solid black;
+  border-radius: 8px;
+  pointer-events: none;
+  opacity: 0;
+}
