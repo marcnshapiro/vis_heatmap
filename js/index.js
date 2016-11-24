@@ -1,3 +1,5 @@
+var prevColorValue = 13.888;
+
 function convertTicks(d) {
   console.log(d);
   return "";
@@ -15,15 +17,32 @@ function hideTip(d) {
   d3.select("#tooltip").transition().duration(500).style("opacity", 0);
 }
 
+var rounded = function(number) {
+  return Math.round( number * 10 ) / 10;
+} 
+
+var formatNum = d3.format(".1f")
+
+var colorToValue = function(color, z) {
+  return z.invertExtent(color)[0]
+}; // returns degrees variance for corresponding color
+
+function getLegendText(d, z, baseTemp) {
+  var curColorValue = formatNum(rounded(z.invertExtent(d)[0] + baseTemp));
+  var retStr = "(" + formatNum(rounded(curColorValue)) + ", " + formatNum(rounded(prevColorValue)) + "]"
+  prevColorValue = curColorValue;
+  return retStr;
+}
 function docReady() {
   var minX = 0;
   var maxX = 0;
   var maxY = 0;
 
-  var colors = ["#5e4fa2", "#3288bd", "#66c2a5", "#abdda4", "#e6f598", "#ffffbf", "#fee08b", "#fdae61", "#f46d43", "#d53e4f", "#9e0142"];
+  var colors = ["#3f00bf", "#0000cf", "#1f3fbf", "#004fcf", "#3f7fbf", "#bfbf9f", "#bf7f3f", "#cf4f00", "#bf3f1f", "#cf0000", "#ff0000"];
+  //var colors = ["#5e4fa2", "#3288bd", "#66c2a5", "#abdda4", "#e6f598", "#ffffbf", "#fee08b", "#fdae61", "#f46d43", "#d53e4f", "#9e0142"];
   var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-  var margin = {top: 20, right: 90, bottom: 30, left: 50};
+  var margin = {top: 20, right: 90, bottom: 75, left: 50};
   var width = 960 - margin.left - margin.right;
   var height = 500 - margin.top - margin.bottom;
 
@@ -36,7 +55,7 @@ function docReady() {
   d3.json("https://raw.githubusercontent.com/FreeCodeCamp/ProjectReferenceData/master/global-temperature.json", function(error, json) {
     if (error) throw error;
 
-    var baseTemp = json.baseTemperature;
+    baseTemp = json.baseTemperature;
     var data = json.monthlyVariance;
 
     var variance = data.map(function(obj) { return obj.variance; });
@@ -75,6 +94,7 @@ function docReady() {
     svg.append('g')
     .attr('transform', 'translate(0,' + height + ')')
     .attr('class', 'main axis')
+    .style("font-weight", "bold")
     .call(xAxis);
 
     // draw the y axis
@@ -83,6 +103,7 @@ function docReady() {
     svg.append('g')
     .attr('transform', 'translate(0,0)')
     .attr('class', 'main axis')
+    .style("font-weight", "bold")
     .call(yAxis);
 
     // add month labels
@@ -90,12 +111,12 @@ function docReady() {
     svg.append("text").text(months[i])
       .attr('transform', 'translate(-5, ' + (i * gridHeight + gridHeight/1.75) + ')')
       .style("font-size", "12px")
+      .style("font-weight", "bold")
       .style("text-anchor", "end");
 
     }
 
-
-
+    // add legend
     var legend = svg.selectAll(".legend")
       .data([0].concat(z.quantiles()), function(d) {
         return d;
@@ -128,5 +149,36 @@ function docReady() {
       .attr("y", height + margin.bottom / 2 + 15)
       .style("text-anchor", "front");
 
+    //Create legend
+    var legendElementWidth = width / colors.length;
+    var legendElementHeight = 20;    
+
+    var legend = svg.append("g")
+    .attr("class", "legend")
+    .attr("transform", "translate(" + (width - legendElementWidth * colors.length) + "," + 0 + ")");
+    
+    legend.selectAll('rect')
+        .data(colors)
+        .enter()
+        .append("rect")
+        .attr("y", height + 25)
+        .attr("x", function(d, i){ return i *  legendElementWidth;})
+        .attr("width", legendElementWidth)
+        .attr("height", legendElementHeight)
+        .style("fill", function(d) {
+           return d;
+        });
+
+    // append scale for legend
+    legend.selectAll('text')
+        .data(colors.reverse())
+        .enter()
+        .append("text")
+        .text( function(d) { return getLegendText(d, z, baseTemp);})
+        .attr("text-anchor", "middle")
+        .attr("y", height + 25 + legendElementHeight + 14)
+        .attr("x", function(d, i){ return (10 - i) *  legendElementWidth + legendElementWidth / 2;})
+        .style("font-size", "10px")
+        .style("font-weight", "bold")
   });
 };
